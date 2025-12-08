@@ -28,7 +28,7 @@ export default function ResultCard({ result }: ResultCardProps) {
     // IN RENDER:
     // ...
     <Image
-        src={imageSrc} // Use the blob URL
+        src={result.imageUrl} // Use original image URL
         alt={result.title}
         fill
         className="object-contain"
