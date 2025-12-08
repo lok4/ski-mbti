@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useQuizStore } from "@/store/useQuizStore";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ResultCardProps {
     result: QuizResult;
@@ -17,6 +17,14 @@ export default function ResultCard({ result }: ResultCardProps) {
     const { reset } = useQuizStore();
     const router = useRouter();
     const [isSharing, setIsSharing] = useState(false);
+    const [canShare, setCanShare] = useState(true); // Default to true to prevent flicker on mobile
+
+    useEffect(() => {
+        // Check if native sharing is supported (Mobile usually true, Desktop usually false)
+        if (typeof navigator !== 'undefined') {
+            setCanShare(!!navigator.share);
+        }
+    }, []);
 
     const handleRetry = () => {
         reset();
@@ -162,7 +170,7 @@ export default function ResultCard({ result }: ResultCardProps) {
                         disabled={isSharing}
                     >
                         <Share2 className="w-4 h-4 mr-2" />
-                        {isSharing ? "저장 중..." : "공유하기"}
+                        {isSharing ? "저장 중..." : (canShare ? "공유하기" : "이미지 저장")}
                     </Button>
                 </div>
             </div>
