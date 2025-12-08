@@ -1,8 +1,11 @@
 import { ImageResponse } from "@vercel/og";
 import { NextRequest } from "next/server";
 import { RESULTS } from "@/constants/quiz";
+import fs from "fs";
+import path from "path";
 
-export const runtime = "edge";
+// Use Node.js runtime to allow access to 50MB+ bundle size (needed for 6MB font)
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -11,26 +14,27 @@ export async function GET(request: NextRequest) {
     // Default to a fallback if not found
     const result = character && RESULTS[character] ? RESULTS[character] : RESULTS["BRAVE_POLAR_BEAR"];
 
-    // Use absolute URL for image source
-    const baseUrl = process.env.NODE_ENV === "development"
-        ? "http://localhost:3000"
-        : "https://ski-mbti.vercel.app";
+    let fontData: ArrayBuffer | null = null;
+    let imageBuffer: ArrayBuffer | null = null;
 
-    const imageUrl = `${baseUrl}${result.imageUrl}`;
+    try {
+        // Load Font from FS
+        const fontPath = path.join(process.cwd(), "public", "fonts", "NotoSansKR-Bold.ttf");
+        const fontFile = fs.readFileSync(fontPath);
+        fontData = fontFile.buffer as ArrayBuffer;
 
-    // Font loading for Korean text support (Critical for avoiding 500 error)
-    const fontData = await fetch(
-        new URL('https://fonts.gstatic.com/s/notosanskr/v27/PbykFmXiEBPT4ITbgNA5Cgm20xz64px_1hVWZlwa0kw.ttf', import.meta.url)
-    ).then((res) => res.arrayBuffer());
+        // Load Image from FS
+        const imagePath = path.join(process.cwd(), "public", result.imageUrl);
+        const imageFile = fs.readFileSync(imagePath);
+        imageBuffer = imageFile.buffer as ArrayBuffer;
+    } catch (e) {
+        console.error("Failed to load assets from FS:", e);
+    }
 
-    // Fetch the image as ArrayBuffer (Now safe because images are optimized <250KB)
-    const imageBuffer = await fetch(imageUrl).then((res) => {
-        if (!res.ok) throw new Error(`Failed to load image: ${imageUrl}`);
-        return res.arrayBuffer();
-    }).catch(err => {
-        console.error("Image fetch failed:", err);
-        return null;
-    });
+    // Fallback if FS fails (should not happen on Vercel if files are in public)
+    if (!fontData || !imageBuffer) {
+        return new Response("Failed to load assets", { status: 500 });
+    }
 
     return new ImageResponse(
         (
@@ -64,18 +68,14 @@ export async function GET(request: NextRequest) {
                         boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
                     }}
                 >
-                    {imageBuffer ? (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
-                            src={imageBuffer as any}
-                            alt={result.title}
-                            width={450}
-                            height={450}
-                            style={{ objectFit: "contain" }}
-                        />
-                    ) : (
-                        <div style={{ fontSize: 40, color: "#ccc" }}>Img Error</div>
-                    )}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src={imageBuffer as any}
+                        alt={result.title}
+                        width={450}
+                        height={450}
+                        style={{ objectFit: "contain" }}
+                    />
                 </div>
 
                 {/* Subtitle */}
