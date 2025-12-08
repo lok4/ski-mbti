@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
 
                 {/* Footer Brand */}
                 <div style={{ position: 'absolute', bottom: 40, right: 40, fontSize: 24, color: '#9ca3af' }}>
-                    Ski MBTI by Lok
+                    Ski MBTI by 낭만스키
                 </div>
             </div>
         ),
