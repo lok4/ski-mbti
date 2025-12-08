@@ -8,7 +8,7 @@ import { Snowflake } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function Home() {
-  const [participantCount, setParticipantCount] = useState<number>(988);
+  const [participantCount, setParticipantCount] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchCount = async () => {
@@ -22,9 +22,12 @@ export default function Home() {
 
         if (!error && count !== null) {
           setParticipantCount(BASE_COUNT + count);
+        } else {
+          setParticipantCount(BASE_COUNT);
         }
       } catch (e) {
         console.error("Failed to fetch count", e);
+        setParticipantCount(BASE_COUNT);
       }
     };
 
@@ -73,7 +76,7 @@ export default function Home() {
 
         <div className="h-4 flex items-center justify-center">
           <p className="text-xs text-gray-400 transition-opacity duration-300">
-            참여자 수: {participantCount.toLocaleString()}명
+            참여자 수: {participantCount ? `${participantCount.toLocaleString()}명` : <span className="animate-pulse">집계 중...</span>}
           </p>
         </div>
       </motion.div>
