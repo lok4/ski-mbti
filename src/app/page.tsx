@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import { Snowflake } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -62,9 +63,14 @@ export default function Home() {
         </p>
 
         <div className="py-8">
-          {/* Placeholder for Hero Image */}
-          <div className="w-64 h-64 bg-secondary/30 rounded-full mx-auto flex items-center justify-center text-6xl shadow-inner">
-            ⛷️
+          <div className="relative w-64 h-64 mx-auto rounded-full overflow-hidden shadow-lg border-4 border-white">
+            <Image
+              src="/images/home-main.jpg"
+              alt="Ski MBTI Hero"
+              fill
+              className="object-cover"
+              priority
+            />
           </div>
         </div>
 
