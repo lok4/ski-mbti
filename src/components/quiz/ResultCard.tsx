@@ -36,7 +36,7 @@ export default function ResultCard({ result }: ResultCardProps) {
                 useCORS: true, // Handle cross-origin images
                 scale: 2, // Higher quality
                 backgroundColor: "#ffffff",
-            });
+            } as any);
 
             canvas.toBlob(async (blob) => {
                 if (!blob) {
