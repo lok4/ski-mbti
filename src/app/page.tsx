@@ -1,11 +1,36 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { Snowflake } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Home() {
+  const [participantCount, setParticipantCount] = useState<number>(1234);
+
+  useEffect(() => {
+    const fetchCount = async () => {
+      // Base count provided by user requirement
+      const BASE_COUNT = 988;
+
+      try {
+        const { count, error } = await supabase
+          .from("leads")
+          .select("*", { count: "exact", head: true });
+
+        if (!error && count !== null) {
+          setParticipantCount(BASE_COUNT + count);
+        }
+      } catch (e) {
+        console.error("Failed to fetch count", e);
+      }
+    };
+
+    fetchCount();
+  }, []);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center max-w-md mx-auto w-full">
       <motion.div
@@ -47,7 +72,7 @@ export default function Home() {
         </Link>
 
         <p className="text-xs text-gray-400">
-          참여자 수: 1,234명
+          참여자 수: {participantCount.toLocaleString()}명
         </p>
       </motion.div>
     </div>
