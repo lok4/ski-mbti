@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useQuizStore } from "@/store/useQuizStore";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import html2canvas from "html2canvas";
 
 interface ResultCardProps {
@@ -20,10 +20,41 @@ export default function ResultCard({ result }: ResultCardProps) {
     const cardRef = useRef<HTMLDivElement>(null);
     const [isSharing, setIsSharing] = useState(false);
 
+    const [imageSrc, setImageSrc] = useState<string>(result.imageUrl);
+
+    // Pre-load image as Blob to bypass CORS for html2canvas
+    useEffect(() => {
+        const prepareImage = async () => {
+            try {
+                const response = await fetch(result.imageUrl);
+                const blob = await response.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                setImageSrc(objectUrl);
+            } catch (e) {
+                console.error("Failed to preload image blob", e);
+            }
+        };
+
+        prepareImage();
+    }, [result.imageUrl]);
+
     const handleRetry = () => {
         reset();
         router.push("/quiz");
     };
+
+    // ... handleShare logic ...
+
+    // IN RENDER:
+    // ...
+    <Image
+        src={imageSrc} // Use the blob URL
+        alt={result.title}
+        fill
+        className="object-contain"
+        priority
+        unoptimized
+    />
 
     const handleShare = async () => {
         if (!cardRef.current) return;
@@ -72,7 +103,7 @@ export default function ResultCard({ result }: ResultCardProps) {
         } catch (error) {
             console.error("Failed to generate image", error);
             setIsSharing(false);
-            alert("이미지 생성에 실패했습니다.");
+            alert(`이미지 생성 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`);
         }
     };
 
@@ -89,7 +120,7 @@ export default function ResultCard({ result }: ResultCardProps) {
                 >
                     <div className="relative w-48 h-48 mx-auto mb-6 bg-gray-100 rounded-full overflow-hidden">
                         <Image
-                            src={result.imageUrl}
+                            src={imageSrc}
                             alt={result.title}
                             fill
                             className="object-contain"
