@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { PersonalityType } from "@/types";
-import { CheckCircle, AlertCircle } from "lucide-react";
+import { CheckCircle, AlertCircle, ArrowRightCircle } from "lucide-react";
 import { TextInput, Checkbox } from "@mantine/core";
 import { supabase } from "@/lib/supabaseClient";
 
@@ -171,19 +171,22 @@ export default function LeadForm({ resultType }: LeadFormProps) {
                     개인정보는 상담 목적으로만 사용되며 안전하게 보호됩니다.
                 </p>
 
-                <div className="pt-4 border-t border-gray-100">
+                <div className="pt-6 border-t border-gray-100">
                     <a
                         href="https://nangmanski.com/"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block w-full"
+                        className="block w-full group"
                     >
                         <Button
                             type="button"
-                            variant="outline"
-                            className="w-full h-14 text-lg font-bold border-primary text-primary hover:bg-primary/5"
+                            className="w-full h-16 text-xl font-black bg-gradient-to-r from-[#3B82F6] to-[#2563EB] hover:from-[#2563EB] hover:to-[#1D4ED8] text-white shadow-xl shadow-blue-200 border-0 transform transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden"
                         >
-                            나에게 맞는 선생님 찾으러가기
+                            <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite] skew-x-12 -translate-x-full group-hover:animate-none" />
+                            <span className="relative flex items-center justify-center gap-2">
+                                나에게 맞는 선생님 찾으러가기
+                                <ArrowRightCircle className="w-6 h-6 animate-pulse" />
+                            </span>
                         </Button>
                     </a>
                 </div>
