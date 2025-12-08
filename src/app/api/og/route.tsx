@@ -29,10 +29,11 @@ export async function GET(request: NextRequest) {
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor: "white",
-                    backgroundImage: "linear-gradient(to bottom right, #e0f2fe, #ffffff)",
-                    padding: 40,
+                    backgroundImage: "linear-gradient(to bottom, #eff6ff, #ffffff)", // Cleaner vertical gradient
+                    padding: 80, // Increased padding
                 }}
             >
+                {/* Animal Image Circle */}
                 <div
                     style={{
                         display: "flex",
@@ -40,64 +41,75 @@ export async function GET(request: NextRequest) {
                         justifyContent: "center",
                         backgroundColor: "#f3f4f6",
                         borderRadius: "100%",
-                        padding: 20,
-                        marginBottom: 20,
-                        width: 200,
-                        height: 200,
+                        padding: 40,
+                        marginBottom: 60,
+                        width: 500, // Larger image container
+                        height: 500,
                         overflow: "hidden",
+                        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", // Soft shadow
                     }}
                 >
-                    {/* We use a simple img tag for the server-side generation */}
                     <img
                         src={imageUrl}
                         alt={result.title}
-                        width={180}
-                        height={180}
+                        width={450}
+                        height={450}
                         style={{ objectFit: "contain" }}
                     />
                 </div>
 
-                <div style={{ fontSize: 24, color: "#2563EB", fontWeight: 700, marginBottom: 10 }}>
+                {/* Subtitle */}
+                <div style={{ fontSize: 48, color: "#3B82F6", fontWeight: 700, marginBottom: 20 }}>
                     우리 아이 스키 성향은
                 </div>
 
-                <div style={{ fontSize: 60, fontWeight: 900, color: "#111827", marginBottom: 20, textAlign: "center" }}>
+                {/* Main Title */}
+                <div style={{ fontSize: 96, fontWeight: 900, color: "#111827", marginBottom: 40, textAlign: "center" }}>
                     {result.title}
                 </div>
 
-                <div style={{ display: "flex", gap: 10, marginBottom: 30 }}>
+                {/* Tags */}
+                <div style={{ display: "flex", gap: 20, marginBottom: 80, flexWrap: "wrap", justifyContent: "center" }}>
                     {result.tags.map((tag) => (
                         <div key={tag} style={{
-                            padding: "8px 20px",
+                            padding: "16px 40px",
                             backgroundColor: "white",
-                            borderRadius: 20,
-                            fontSize: 20,
+                            borderRadius: 50,
+                            fontSize: 36,
                             color: "#4B5563",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+                            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
                         }}>
                             {tag}
                         </div>
                     ))}
                 </div>
 
+                {/* Recommendation Box */}
                 <div style={{
-                    backgroundColor: "#fffbeb",
-                    border: "2px solid #fed7aa",
-                    borderRadius: 20,
-                    padding: "20px 40px",
+                    backgroundColor: "#fff7ed", // Warm orange background
+                    border: "4px solid #fed7aa",
+                    borderRadius: 40,
+                    padding: "40px 60px",
                     display: "flex",
                     flexDirection: "column",
                     alignItems: "center",
-                    textAlign: "center"
+                    textAlign: "center",
+                    width: "100%",
+                    maxWidth: 900,
                 }}>
-                    <div style={{ fontSize: 20, color: "#d97706", fontWeight: "bold", marginBottom: 5 }}>추천 강습 스타일</div>
-                    <div style={{ fontSize: 28, fontWeight: "bold", color: "#1f2937" }}>{result.recommendedLesson}</div>
+                    <div style={{ fontSize: 42, color: "#d97706", fontWeight: "bold", marginBottom: 15 }}>추천 강습 스타일</div>
+                    <div style={{ fontSize: 52, fontWeight: "bold", color: "#1f2937", lineHeight: 1.3 }}>{result.recommendedLesson}</div>
+                </div>
+
+                {/* Branding Footer */}
+                <div style={{ position: "absolute", bottom: 60, fontSize: 32, color: "#9ca3af", fontWeight: 500 }}>
+                    Ski MBTI by Lok
                 </div>
             </div>
         ),
         {
-            width: 1200,
-            height: 630,
+            width: 1080,
+            height: 1920,
         }
     );
 }
