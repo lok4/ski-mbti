@@ -94,6 +94,7 @@ export default function ResultCard({ result }: ResultCardProps) {
                             fill
                             className="object-contain"
                             priority
+                            unoptimized // Fix for html2canvas CORS issue
                         />
                     </div>
                     <h2 className="text-primary font-bold text-lg tracking-wide mb-2">
