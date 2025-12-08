@@ -8,7 +8,7 @@ import { Snowflake } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 
 export default function Home() {
-  const [participantCount, setParticipantCount] = useState<number>(1234);
+  const [participantCount, setParticipantCount] = useState<number>(988);
 
   useEffect(() => {
     const fetchCount = async () => {
