@@ -170,6 +170,23 @@ export default function LeadForm({ resultType }: LeadFormProps) {
                 <p className="text-xs text-center text-gray-400 mt-4">
                     개인정보는 상담 목적으로만 사용되며 안전하게 보호됩니다.
                 </p>
+
+                <div className="pt-4 border-t border-gray-100">
+                    <a
+                        href="https://nangmanski.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block w-full"
+                    >
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full h-14 text-lg font-bold border-primary text-primary hover:bg-primary/5"
+                        >
+                            나에게 맞는 선생님 찾으러가기
+                        </Button>
+                    </a>
+                </div>
             </form>
         </div>
     );
