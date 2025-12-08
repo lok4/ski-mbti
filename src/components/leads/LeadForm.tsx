@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { PersonalityType } from "@/types";
 import { CheckCircle, AlertCircle } from "lucide-react";
 import { TextInput, Checkbox } from "@mantine/core";
+import { supabase } from "@/lib/supabaseClient";
 
 const phoneRegex = /^01([0|1|6|7|8|9])-?([0-9]{3,4})-?([0-9]{4})$/;
 
@@ -49,17 +49,19 @@ export default function LeadForm({ resultType }: LeadFormProps) {
     const onSubmit = async (data: FormValues) => {
         setStatus("loading");
         try {
-            // Replace with actual N8n Webhook URL
-            const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
+            const { error } = await supabase
+                .from("leads")
+                .insert([
+                    {
+                        name: data.name,
+                        phone: data.phone,
+                        result_type: data.resultType,
+                        marketing_consent: data.marketingConsent,
+                        created_at: new Date().toISOString(),
+                    },
+                ]);
 
-            if (!webhookUrl) {
-                throw new Error("Webhook URL is not configured");
-            }
-
-            await axios.post(webhookUrl, {
-                ...data,
-                timestamp: new Date().toISOString(),
-            });
+            if (error) throw error;
 
             setStatus("success");
         } catch (error) {
