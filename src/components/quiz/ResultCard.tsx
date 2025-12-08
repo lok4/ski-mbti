@@ -6,7 +6,7 @@ import { Share2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuizStore } from "@/store/useQuizStore";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import html2canvas from "html2canvas";
 
 interface ResultCardProps {
@@ -18,10 +18,27 @@ export default function ResultCard({ result }: ResultCardProps) {
     const router = useRouter();
     const cardRef = useRef<HTMLDivElement>(null);
     const [isSharing, setIsSharing] = useState(false);
+    const [base64Image, setBase64Image] = useState<string>("");
 
-    // Extract filename from /images/cheetah.png -> cheetah.png
-    const imageFilename = result.imageUrl.split("/").pop();
-    const proxyImageUrl = `/api/proxy?filename=${imageFilename}`;
+    // Pre-load image as Base64 when component mounts
+    // This ensures no network request is needed during html2canvas capture
+    // bypassing all CORS and taint issues.
+    useEffect(() => {
+        const fetchImage = async () => {
+            try {
+                const response = await fetch(result.imageUrl);
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setBase64Image(reader.result as string);
+                };
+                reader.readAsDataURL(blob);
+            } catch (e) {
+                console.error("Failed to load image", e);
+            }
+        };
+        fetchImage();
+    });
 
     const handleRetry = () => {
         reset();
@@ -29,14 +46,15 @@ export default function ResultCard({ result }: ResultCardProps) {
     };
 
     const handleShare = async () => {
-        if (!cardRef.current) return;
+        if (!cardRef.current || !base64Image) return;
 
         setIsSharing(true);
 
         try {
-            // Generate image from DOM using the Proxy URL for the image
+            // Generate image from DOM 
+            // Since we use Base64 image source, there are no CORS/Tainted Canvas issues
             const canvas = await html2canvas(cardRef.current, {
-                useCORS: true, // Critical: this works because Proxy sends A-C-A-O: *
+                useCORS: true,
                 scale: 2,
                 backgroundColor: "#ffffff",
             } as any);
@@ -48,7 +66,7 @@ export default function ResultCard({ result }: ResultCardProps) {
 
                 const file = new File([blob], "ski-mbti-result.png", { type: "image/png" });
                 const shareData = {
-                    title: `나의 스키 MBTI는 ${result.title} !`,
+                    title: `나의 스키 MBTI는 ${result.title}!`,
                     text: result.description,
                     files: [file],
                 };
@@ -85,14 +103,14 @@ export default function ResultCard({ result }: ResultCardProps) {
                     transition={{ duration: 0.5 }}
                 >
                     <div className="relative w-48 h-48 mx-auto mb-6 bg-gray-100 rounded-full overflow-hidden flex items-center justify-center">
-                        {/* Use standard img tag with Proxy URL to guarantee html2canvas compatibility */}
+                        {/* Render Base64 image if available, otherwise fallback to URL */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                            src={proxyImageUrl}
+                            src={base64Image || result.imageUrl}
                             alt={result.title}
                             className="object-contain w-full h-full"
                             style={{ objectFit: "contain" }}
-                            crossOrigin="anonymous" // Critical: Request CORS headers from Proxy
+                            crossOrigin="anonymous"
                         />
                     </div>
                     <h2 className="text-primary font-bold text-lg tracking-wide mb-2">
