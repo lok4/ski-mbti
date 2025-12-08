@@ -1,11 +1,8 @@
 import { ImageResponse } from "@vercel/og";
 import { NextRequest } from "next/server";
 import { RESULTS } from "@/constants/quiz";
-import fs from "fs";
-import path from "path";
 
-// Switch to Node.js runtime to allow filesystem access
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -14,17 +11,14 @@ export async function GET(request: NextRequest) {
     // Default to a fallback if not found
     const result = character && RESULTS[character] ? RESULTS[character] : RESULTS["BRAVE_POLAR_BEAR"];
 
-    let imageBuffer: ArrayBuffer | null = null;
+    // Use absolute URL for image source
+    const baseUrl = process.env.NODE_ENV === "development"
+        ? "http://localhost:3000"
+        : "https://ski-mbti.vercel.app";
 
-    try {
-        // Read image directly from filesystem
-        // result.imageUrl is like "/images/polar-bear.png"
-        const imagePath = path.join(process.cwd(), "public", result.imageUrl);
-        const fileBuffer = fs.readFileSync(imagePath);
-        imageBuffer = fileBuffer.buffer as ArrayBuffer;
-    } catch (error) {
-        console.error("Failed to read image file:", error);
-    }
+    // Use Vercel Image Optimization to resize the huge 6MB images to a manageable size (~500px)
+    // This prevents timeouts and memory issues in the serverless function
+    const imageUrl = `${baseUrl}/_next/image?url=${encodeURIComponent(result.imageUrl)}&w=640&q=75`;
 
     return new ImageResponse(
         (
@@ -57,17 +51,14 @@ export async function GET(request: NextRequest) {
                         boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
                     }}
                 >
-                    {imageBuffer ? (
-                        <img
-                            src={imageBuffer as any}
-                            alt={result.title}
-                            width={450}
-                            height={450}
-                            style={{ objectFit: "contain" }}
-                        />
-                    ) : (
-                        <div style={{ fontSize: 40, color: "#ccc" }}>No Image</div>
-                    )}
+                    {/* Use the optimized URL directly */}
+                    <img
+                        src={imageUrl}
+                        alt={result.title}
+                        width={450}
+                        height={450}
+                        style={{ objectFit: "contain" }}
+                    />
                 </div>
 
                 {/* Subtitle */}

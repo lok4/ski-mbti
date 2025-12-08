@@ -84,7 +84,7 @@ export default function ResultCard({ result }: ResultCardProps) {
             if (error instanceof Error && error.name === 'AbortError') {
                 alert("이미지 생성 시간이 초과되었습니다. 다시 시도해주세요.");
             } else {
-                alert("이미지 생성에 실패했습니다.");
+                alert(`이미지 생성 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`);
             }
         } finally {
             setIsSharing(false);
