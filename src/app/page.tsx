@@ -71,9 +71,11 @@ export default function Home() {
           </Button>
         </Link>
 
-        <p className="text-xs text-gray-400">
-          참여자 수: {participantCount.toLocaleString()}명
-        </p>
+        <div className="h-4 flex items-center justify-center">
+          <p className="text-xs text-gray-400 transition-opacity duration-300">
+            참여자 수: {participantCount.toLocaleString()}명
+          </p>
+        </div>
       </motion.div>
     </div>
   );

@@ -46,7 +46,7 @@ export default function ResultCard({ result }: ResultCardProps) {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <div className="relative w-48 h-48 mx-auto mb-6">
+                    <div className="relative w-48 h-48 mx-auto mb-6 bg-gray-100 rounded-full overflow-hidden">
                         <Image
                             src={result.imageUrl}
                             alt={result.title}
