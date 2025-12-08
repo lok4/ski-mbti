@@ -41,7 +41,14 @@ export default function ResultCard({ result }: ResultCardProps) {
 
         try {
             // Call our server-side API to generate the image
-            const response = await fetch(`/api/og?character=${result.type}`);
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+            const response = await fetch(`/api/og?character=${result.type}`, {
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
 
             if (!response.ok) {
                 throw new Error(`Server Error: ${response.status} ${response.statusText}`);
@@ -74,7 +81,11 @@ export default function ResultCard({ result }: ResultCardProps) {
             }
         } catch (error) {
             console.error("Failed to generate image", error);
-            alert("이미지 생성에 실패했습니다.");
+            if (error instanceof Error && error.name === 'AbortError') {
+                alert("이미지 생성 시간이 초과되었습니다. 다시 시도해주세요.");
+            } else {
+                alert("이미지 생성에 실패했습니다.");
+            }
         } finally {
             setIsSharing(false);
         }

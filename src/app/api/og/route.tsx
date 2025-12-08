@@ -12,16 +12,23 @@ export async function GET(request: NextRequest) {
     const result = character && RESULTS[character] ? RESULTS[character] : RESULTS["BRAVE_POLAR_BEAR"];
 
     // Use absolute URL for image source
-    const protocol = request.headers.get("x-forwarded-proto") || "http";
-    const host = request.headers.get("host");
-    const baseUrl = `${protocol}://${host}`;
+    // Hardcode production URL to ensure internal fetch works on Vercel
+    const baseUrl = process.env.NODE_ENV === "development"
+        ? "http://localhost:3000"
+        : "https://ski-mbti.vercel.app";
+
     const imageUrl = `${baseUrl}${result.imageUrl}`;
 
-    // Fetch the image as ArrayBuffer for Satori
-    // This avoids Satori trying to fetch from the URL itself, which can be flaky in some environments
-    const imageBuffer = await fetch(imageUrl).then((res) => {
-        if (!res.ok) throw new Error(`Failed to load image: ${imageUrl}`);
-        return res.arrayBuffer();
+    // Fetch the image as ArrayBuffer with timeout
+    const imageBuffer = await Promise.race([
+        fetch(imageUrl).then((res) => {
+            if (!res.ok) throw new Error(`Failed to load image: ${imageUrl}`);
+            return res.arrayBuffer();
+        }),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)) // 3s timeout
+    ]).catch(err => {
+        console.error("Image fetch failed:", err);
+        return null;
     });
 
     return new ImageResponse(
@@ -55,13 +62,17 @@ export async function GET(request: NextRequest) {
                         boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
                     }}
                 >
-                    <img
-                        src={imageBuffer as any}
-                        alt={result.title}
-                        width={450}
-                        height={450}
-                        style={{ objectFit: "contain" }}
-                    />
+                    {imageBuffer ? (
+                        <img
+                            src={imageBuffer as any}
+                            alt={result.title}
+                            width={450}
+                            height={450}
+                            style={{ objectFit: "contain" }}
+                        />
+                    ) : (
+                        <div style={{ fontSize: 40, color: "#ccc" }}>No Image</div>
+                    )}
                 </div>
 
                 {/* Subtitle */}
