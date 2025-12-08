@@ -52,20 +52,30 @@ export default function ResultCard({ result }: ResultCardProps) {
                 files: [file],
             };
 
+            const safeDownload = () => {
+                const link = document.createElement("a");
+                link.download = "ski-mbti-result.png";
+                link.href = URL.createObjectURL(blob);
+                document.body.appendChild(link); // Append to body for Firefox support
+                link.click();
+                document.body.removeChild(link); // Clean up
+                alert("이미지가 다운로드 폴더에 저장되었습니다!");
+            };
+
             // Try native sharing
             if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
                 try {
                     await navigator.share(shareData);
                 } catch (err) {
                     console.log("Share cancelled or failed", err);
+                    // Only fallback to download if it wasn't a user cancellation (AbortError)
+                    if (err instanceof Error && err.name !== 'AbortError') {
+                        safeDownload();
+                    }
                 }
             } else {
-                // Fallback to download
-                const link = document.createElement("a");
-                link.download = "ski-mbti-result.png";
-                link.href = URL.createObjectURL(blob);
-                link.click();
-                alert("이미지가 저장되었습니다! (공유하기가 지원되지 않는 환경)");
+                // Desktop or unsupported browser -> Direct Download
+                safeDownload();
             }
         } catch (error) {
             console.error("Failed to generate image", error);
