@@ -1,11 +1,8 @@
 import { ImageResponse } from "@vercel/og";
 import { NextRequest } from "next/server";
 import { RESULTS } from "@/constants/quiz";
-import fs from "fs";
-import path from "path";
 
-// Use Node.js runtime to allow fast filesystem access
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -14,16 +11,26 @@ export async function GET(request: NextRequest) {
     // Default to a fallback if not found
     const result = character && RESULTS[character] ? RESULTS[character] : RESULTS["BRAVE_POLAR_BEAR"];
 
-    let imageBuffer: ArrayBuffer | null = null;
+    // Use absolute URL for image source
+    const baseUrl = process.env.NODE_ENV === "development"
+        ? "http://localhost:3000"
+        : "https://ski-mbti.vercel.app";
 
-    try {
-        // Read optimized image directly from filesystem
-        const imagePath = path.join(process.cwd(), "public", result.imageUrl);
-        const fileBuffer = fs.readFileSync(imagePath);
-        imageBuffer = fileBuffer.buffer as ArrayBuffer;
-    } catch (error) {
-        console.error("Failed to read image file:", error);
-    }
+    const imageUrl = `${baseUrl}${result.imageUrl}`;
+
+    // Font loading for Korean text support (Critical for avoiding 500 error)
+    const fontData = await fetch(
+        new URL('https://fonts.gstatic.com/s/notosanskr/v27/PbykFmXiEBPT4ITbgNA5Cgm20xz64px_1hVWZlwa0kw.ttf', import.meta.url)
+    ).then((res) => res.arrayBuffer());
+
+    // Fetch the image as ArrayBuffer (Now safe because images are optimized <250KB)
+    const imageBuffer = await fetch(imageUrl).then((res) => {
+        if (!res.ok) throw new Error(`Failed to load image: ${imageUrl}`);
+        return res.arrayBuffer();
+    }).catch(err => {
+        console.error("Image fetch failed:", err);
+        return null;
+    });
 
     return new ImageResponse(
         (
@@ -38,6 +45,7 @@ export async function GET(request: NextRequest) {
                     backgroundColor: "white",
                     backgroundImage: "linear-gradient(to bottom, #eff6ff, #ffffff)",
                     padding: 80,
+                    fontFamily: '"NotoSansKR"',
                 }}
             >
                 {/* Animal Image Circle */}
@@ -106,6 +114,13 @@ export async function GET(request: NextRequest) {
         {
             width: 1080,
             height: 1920,
+            fonts: [
+                {
+                    name: 'NotoSansKR',
+                    data: fontData,
+                    style: 'normal',
+                },
+            ],
         }
     );
 }
