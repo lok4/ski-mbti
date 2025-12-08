@@ -1,8 +1,11 @@
 import { ImageResponse } from "@vercel/og";
 import { NextRequest } from "next/server";
 import { RESULTS } from "@/constants/quiz";
+import fs from "fs";
+import path from "path";
 
-export const runtime = "edge";
+// Switch to Node.js runtime to allow filesystem access
+export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
@@ -11,25 +14,17 @@ export async function GET(request: NextRequest) {
     // Default to a fallback if not found
     const result = character && RESULTS[character] ? RESULTS[character] : RESULTS["BRAVE_POLAR_BEAR"];
 
-    // Use absolute URL for image source
-    // Hardcode production URL to ensure internal fetch works on Vercel
-    const baseUrl = process.env.NODE_ENV === "development"
-        ? "http://localhost:3000"
-        : "https://ski-mbti.vercel.app";
+    let imageBuffer: ArrayBuffer | null = null;
 
-    const imageUrl = `${baseUrl}${result.imageUrl}`;
-
-    // Fetch the image as ArrayBuffer with timeout
-    const imageBuffer = await Promise.race([
-        fetch(imageUrl).then((res) => {
-            if (!res.ok) throw new Error(`Failed to load image: ${imageUrl}`);
-            return res.arrayBuffer();
-        }),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)) // 3s timeout
-    ]).catch(err => {
-        console.error("Image fetch failed:", err);
-        return null;
-    });
+    try {
+        // Read image directly from filesystem
+        // result.imageUrl is like "/images/polar-bear.png"
+        const imagePath = path.join(process.cwd(), "public", result.imageUrl);
+        const fileBuffer = fs.readFileSync(imagePath);
+        imageBuffer = fileBuffer.buffer as ArrayBuffer;
+    } catch (error) {
+        console.error("Failed to read image file:", error);
+    }
 
     return new ImageResponse(
         (

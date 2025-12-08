@@ -42,7 +42,7 @@ export default function ResultCard({ result }: ResultCardProps) {
         try {
             // Call our server-side API to generate the image
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
             const response = await fetch(`/api/og?character=${result.type}`, {
                 signal: controller.signal
