@@ -42,7 +42,7 @@ export default function RootLayout({
         )}
       >
         <MantineProvider>
-          <main className="flex min-h-screen flex-col items-center justify-between">
+          <main className="min-h-screen bg-background text-foreground font-sans antialiased">
             {children}
             <SpeedInsights />
           </main>

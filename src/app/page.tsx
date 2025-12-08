@@ -80,10 +80,13 @@ export default function Home() {
           </Button>
         </Link>
 
-        <div className="h-4 flex items-center justify-center">
-          <p className="text-xs text-gray-400 transition-opacity duration-300">
-            참여자 수: {participantCount ? `${participantCount.toLocaleString()}명` : <span className="animate-pulse">집계 중...</span>}
-          </p>
+        <div className="h-6 flex items-center justify-center">
+          <div className="text-xs text-gray-400 min-w-[120px] text-center transition-opacity duration-300 bg-gray-50/50 rounded-full px-3 py-1">
+            {participantCount ?
+              `참여자 수: ${participantCount.toLocaleString()}명` :
+              <span className="animate-pulse">참여자 집계 중...</span>
+            }
+          </div>
         </div>
       </motion.div>
     </div>
