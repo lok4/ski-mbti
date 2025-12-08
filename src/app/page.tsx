@@ -1,4 +1,3 @@
-```
 import { supabase } from "@/lib/supabaseClient";
 import HomeContent from "@/components/home/HomeContent";
 
@@ -23,4 +22,3 @@ export default async function Home() {
 
   return <HomeContent participantCount={totalCount} />;
 }
-```
