@@ -4,6 +4,7 @@ import "./globals.css";
 import "@mantine/core/styles.css";
 import { ColorSchemeScript, MantineProvider } from "@mantine/core";
 import { cn } from "@/lib/utils";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const notoSansKr = Noto_Sans_KR({
   subsets: ["latin"],
@@ -43,6 +44,7 @@ export default function RootLayout({
         <MantineProvider>
           <main className="flex min-h-screen flex-col items-center justify-between">
             {children}
+            <SpeedInsights />
           </main>
         </MantineProvider>
       </body>
