@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useQuizStore } from "@/store/useQuizStore";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useRef, useState } from "react";
+import html2canvas from "html2canvas";
 
 interface ResultCardProps {
     result: QuizResult;
@@ -15,6 +17,8 @@ interface ResultCardProps {
 export default function ResultCard({ result }: ResultCardProps) {
     const { reset } = useQuizStore();
     const router = useRouter();
+    const cardRef = useRef<HTMLDivElement>(null);
+    const [isSharing, setIsSharing] = useState(false);
 
     const handleRetry = () => {
         reset();
@@ -22,24 +26,61 @@ export default function ResultCard({ result }: ResultCardProps) {
     };
 
     const handleShare = async () => {
-        if (navigator.share) {
-            try {
-                await navigator.share({
+        if (!cardRef.current) return;
+
+        setIsSharing(true);
+
+        try {
+            // Generate image from DOM
+            const canvas = await html2canvas(cardRef.current, {
+                useCORS: true, // Handle cross-origin images
+                scale: 2, // Higher quality
+                backgroundColor: "#ffffff",
+            });
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    setIsSharing(false);
+                    return;
+                }
+
+                // Create file from blob
+                const file = new File([blob], "ski-mbti-result.png", { type: "image/png" });
+                const shareData = {
                     title: `나의 스키 MBTI는 ${result.title}!`,
                     text: result.description,
-                    url: window.location.href,
-                });
-            } catch (error) {
-                console.log("Error sharing", error);
-            }
-        } else {
-            alert("링크가 복사되었습니다!");
-            navigator.clipboard.writeText(window.location.href);
+                    files: [file],
+                };
+
+                // Try native sharing
+                if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                    try {
+                        await navigator.share(shareData);
+                    } catch (err) {
+                        console.log("Share cancelled or failed", err);
+                    }
+                } else {
+                    // Fallback to download
+                    const link = document.createElement("a");
+                    link.download = "ski-mbti-result.png";
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                    alert("이미지가 저장되었습니다! (공유하기가 지원되지 않는 환경)");
+                }
+                setIsSharing(false);
+            }, "image/png");
+        } catch (error) {
+            console.error("Failed to generate image", error);
+            setIsSharing(false);
+            alert("이미지 생성에 실패했습니다.");
         }
     };
 
     return (
-        <div className="w-full max-w-md mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+        <div
+            ref={cardRef}
+            className="w-full max-w-md mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100"
+        >
             <div className="bg-secondary/30 p-8 text-center">
                 <motion.div
                     initial={{ scale: 0.8, opacity: 0 }}
@@ -74,7 +115,7 @@ export default function ResultCard({ result }: ResultCardProps) {
                 </motion.div>
             </div>
 
-            <div className="p-8 space-y-6">
+            <div className="p-8 space-y-6 bg-white">
                 <div className="space-y-4">
                     <h3 className="text-xl font-bold text-gray-900">성향 분석</h3>
                     <p className="text-gray-600 leading-relaxed">
@@ -89,7 +130,10 @@ export default function ResultCard({ result }: ResultCardProps) {
                     </p>
                 </div>
 
-                <div className="flex gap-3 pt-4">
+                <div
+                    className="flex gap-3 pt-4"
+                    data-html2canvas-ignore // Do not include buttons in the screenshot
+                >
                     <Button
                         variant="outline"
                         className="flex-1"
@@ -102,9 +146,10 @@ export default function ResultCard({ result }: ResultCardProps) {
                         variant="secondary"
                         className="flex-1"
                         onClick={handleShare}
+                        disabled={isSharing}
                     >
                         <Share2 className="w-4 h-4 mr-2" />
-                        공유하기
+                        {isSharing ? "저장 중..." : "공유하기"}
                     </Button>
                 </div>
             </div>
