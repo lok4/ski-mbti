@@ -12,11 +12,17 @@ export async function GET(request: NextRequest) {
     const result = character && RESULTS[character] ? RESULTS[character] : RESULTS["BRAVE_POLAR_BEAR"];
 
     // Use absolute URL for image source
-    // In production, use the deployed URL. In dev, use localhost.
     const protocol = request.headers.get("x-forwarded-proto") || "http";
     const host = request.headers.get("host");
     const baseUrl = `${protocol}://${host}`;
     const imageUrl = `${baseUrl}${result.imageUrl}`;
+
+    // Fetch the image as ArrayBuffer for Satori
+    // This avoids Satori trying to fetch from the URL itself, which can be flaky in some environments
+    const imageBuffer = await fetch(imageUrl).then((res) => {
+        if (!res.ok) throw new Error(`Failed to load image: ${imageUrl}`);
+        return res.arrayBuffer();
+    });
 
     return new ImageResponse(
         (
@@ -29,8 +35,8 @@ export async function GET(request: NextRequest) {
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor: "white",
-                    backgroundImage: "linear-gradient(to bottom, #eff6ff, #ffffff)", // Cleaner vertical gradient
-                    padding: 80, // Increased padding
+                    backgroundImage: "linear-gradient(to bottom, #eff6ff, #ffffff)",
+                    padding: 80,
                 }}
             >
                 {/* Animal Image Circle */}
@@ -43,14 +49,14 @@ export async function GET(request: NextRequest) {
                         borderRadius: "100%",
                         padding: 40,
                         marginBottom: 60,
-                        width: 500, // Larger image container
+                        width: 500,
                         height: 500,
                         overflow: "hidden",
-                        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", // Soft shadow
+                        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
                     }}
                 >
                     <img
-                        src={imageUrl}
+                        src={imageBuffer as any}
                         alt={result.title}
                         width={450}
                         height={450}

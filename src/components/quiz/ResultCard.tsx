@@ -42,15 +42,19 @@ export default function ResultCard({ result }: ResultCardProps) {
         try {
             // Call our server-side API to generate the image
             const response = await fetch(`/api/og?character=${result.type}`);
+
+            if (!response.ok) {
+                throw new Error(`Server Error: ${response.status} ${response.statusText}`);
+            }
+
             const blob = await response.blob();
 
-            if (!blob) throw new Error("이미지 생성 실패");
+            if (!blob) throw new Error("이미지 데이터가 비어있습니다.");
 
             const file = new File([blob], "ski-mbti-result.png", { type: "image/png" });
             const shareData = {
                 title: `나의 스키 MBTI는 ${result.title}!`,
                 text: result.description,
-                files: [file],
             };
 
             // Try native sharing
