@@ -6,8 +6,8 @@ import { Share2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuizStore } from "@/store/useQuizStore";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import html2canvas from "html2canvas";
 
 interface ResultCardProps {
     result: QuizResult;
@@ -16,76 +16,58 @@ interface ResultCardProps {
 export default function ResultCard({ result }: ResultCardProps) {
     const { reset } = useQuizStore();
     const router = useRouter();
+    const cardRef = useRef<HTMLDivElement>(null);
     const [isSharing, setIsSharing] = useState(false);
+
+    // Extract filename from /images/cheetah.png -> cheetah.png
+    const imageFilename = result.imageUrl.split("/").pop();
+    const proxyImageUrl = `/api/proxy?filename=${imageFilename}`;
 
     const handleRetry = () => {
         reset();
         router.push("/quiz");
     };
 
-    // ... handleShare logic ...
-
-    // IN RENDER:
-    // ...
-    <Image
-        src={result.imageUrl} // Use original image URL
-        alt={result.title}
-        fill
-        className="object-contain"
-        priority
-        unoptimized
-    />
-
     const handleShare = async () => {
+        if (!cardRef.current) return;
+
         setIsSharing(true);
 
         try {
-            // Call our server-side API to generate the image
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+            // Generate image from DOM using the Proxy URL for the image
+            const canvas = await html2canvas(cardRef.current, {
+                useCORS: true, // Critical: this works because Proxy sends A-C-A-O: *
+                scale: 2,
+                backgroundColor: "#ffffff",
+            } as any);
 
-            const response = await fetch(`/api/og?character=${result.type}`, {
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                throw new Error(`Server Error: ${response.status} ${response.statusText}`);
-            }
-
-            const blob = await response.blob();
-
-            if (!blob) throw new Error("이미지 데이터가 비어있습니다.");
-
-            const file = new File([blob], "ski-mbti-result.png", { type: "image/png" });
-            const shareData = {
-                title: `나의 스키 MBTI는 ${result.title}!`,
-                text: result.description,
-            };
-
-            // Try native sharing
-            if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-                try {
-                    await navigator.share(shareData);
-                } catch (err) {
-                    console.log("Share cancelled or failed", err);
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    throw new Error("Blob generation failed");
                 }
-            } else {
-                // Fallback to download
-                const link = document.createElement("a");
-                link.download = "ski-mbti-result.png";
-                link.href = URL.createObjectURL(blob);
-                link.click();
-                alert("이미지가 저장되었습니다! (공유하기가 지원되지 않는 환경)");
-            }
+
+                const file = new File([blob], "ski-mbti-result.png", { type: "image/png" });
+                const shareData = {
+                    title: `나의 스키 MBTI는 ${result.title} !`,
+                    text: result.description,
+                    files: [file],
+                };
+
+                // Try native sharing
+                if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                    await navigator.share(shareData);
+                } else {
+                    // Fallback to download
+                    const link = document.createElement("a");
+                    link.download = "ski-mbti-result.png";
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                    alert("이미지가 저장되었습니다! (공유하기가 지원되지 않는 환경)");
+                }
+            }, "image/png");
         } catch (error) {
             console.error("Failed to generate image", error);
-            if (error instanceof Error && error.name === 'AbortError') {
-                alert("이미지 생성 시간이 초과되었습니다. 다시 시도해주세요.");
-            } else {
-                alert(`이미지 생성 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`);
-            }
+            alert("이미지 생성에 실패했습니다. (브라우저 제한)");
         } finally {
             setIsSharing(false);
         }
@@ -93,6 +75,7 @@ export default function ResultCard({ result }: ResultCardProps) {
 
     return (
         <div
+            ref={cardRef}
             className="w-full max-w-md mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100"
         >
             <div className="bg-secondary/30 p-8 text-center">
@@ -101,13 +84,15 @@ export default function ResultCard({ result }: ResultCardProps) {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <div className="relative w-48 h-48 mx-auto mb-6 bg-gray-100 rounded-full overflow-hidden">
-                        <Image
-                            src={result.imageUrl}
+                    <div className="relative w-48 h-48 mx-auto mb-6 bg-gray-100 rounded-full overflow-hidden flex items-center justify-center">
+                        {/* Use standard img tag with Proxy URL to guarantee html2canvas compatibility */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={proxyImageUrl}
                             alt={result.title}
-                            fill
-                            className="object-contain"
-                            priority
+                            className="object-contain w-full h-full"
+                            style={{ objectFit: "contain" }}
+                            crossOrigin="anonymous" // Critical: Request CORS headers from Proxy
                         />
                     </div>
                     <h2 className="text-primary font-bold text-lg tracking-wide mb-2">
@@ -146,6 +131,7 @@ export default function ResultCard({ result }: ResultCardProps) {
 
                 <div
                     className="flex gap-3 pt-4"
+                    data-html2canvas-ignore
                 >
                     <Button
                         variant="outline"
