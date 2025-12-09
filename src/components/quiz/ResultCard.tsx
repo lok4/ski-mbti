@@ -2,7 +2,7 @@
 
 import { QuizResult } from "@/types";
 import { motion } from "framer-motion";
-import { Share2, RefreshCw, X } from "lucide-react";
+import { Share2, RefreshCw, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuizStore } from "@/store/useQuizStore";
 import { useRouter } from "next/navigation";
@@ -196,8 +196,17 @@ export default function ResultCard({ result }: ResultCardProps) {
                         onClick={handleShare}
                         disabled={isSharing}
                     >
-                        <Share2 className="w-4 h-4 mr-2" />
-                        {isSharing ? "저장 중..." : (canShare ? "공유하기" : "이미지 저장")}
+                        {isSharing ? (
+                            <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                {canShare ? "공유 준비 중..." : "이미지 생성 중..."}
+                            </>
+                        ) : (
+                            <>
+                                <Share2 className="w-4 h-4 mr-2" />
+                                {canShare ? "공유하기" : "이미지 저장"}
+                            </>
+                        )}
                     </Button>
                 </div>
             </div>
