@@ -2,7 +2,7 @@
 
 import { QuizResult } from "@/types";
 import { motion } from "framer-motion";
-import { Share2, RefreshCw } from "lucide-react";
+import { Share2, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuizStore } from "@/store/useQuizStore";
 import { useRouter } from "next/navigation";
@@ -18,6 +18,8 @@ export default function ResultCard({ result }: ResultCardProps) {
     const router = useRouter();
     const [isSharing, setIsSharing] = useState(false);
     const [canShare, setCanShare] = useState(true); // Default to true to prevent flicker on mobile
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
 
     useEffect(() => {
         // Check if native sharing is supported (Mobile usually true, Desktop usually false)
@@ -50,9 +52,9 @@ export default function ResultCard({ result }: ResultCardProps) {
             }
 
             const blob = await response.blob();
-
             if (!blob) throw new Error("이미지 데이터가 비어있습니다.");
 
+            const imageUrl = URL.createObjectURL(blob);
             const file = new File([blob], "ski-mbti-result.png", { type: "image/png" });
             const shareData = {
                 title: `나의 스키 MBTI는 ${result.title}!`,
@@ -60,10 +62,26 @@ export default function ResultCard({ result }: ResultCardProps) {
                 files: [file],
             };
 
+            const openImageModal = () => {
+                setModalImageUrl(imageUrl);
+                setIsModalOpen(true);
+            };
+
             const safeDownload = () => {
+                // If specific in-app browsers known to block downloads
+                const ua = navigator.userAgent || '';
+                const isKakao = /KAKAOTALK/i.test(ua);
+                const isInstagram = /Instagram/i.test(ua);
+
+                if (isKakao || isInstagram) {
+                    openImageModal();
+                    return;
+                }
+
+                // Default desktop/mobile download
                 const link = document.createElement("a");
                 link.download = "ski-mbti-result.png";
-                link.href = URL.createObjectURL(blob);
+                link.href = imageUrl;
                 document.body.appendChild(link); // Append to body for Firefox support
                 link.click();
                 document.body.removeChild(link); // Clean up
@@ -78,7 +96,8 @@ export default function ResultCard({ result }: ResultCardProps) {
                     console.log("Share cancelled or failed", err);
                     // Only fallback to download if it wasn't a user cancellation (AbortError)
                     if (err instanceof Error && err.name !== 'AbortError') {
-                        safeDownload();
+                        // Fallback to modal for mobile failures
+                        openImageModal();
                     }
                 }
             } else {
@@ -174,6 +193,35 @@ export default function ResultCard({ result }: ResultCardProps) {
                     </Button>
                 </div>
             </div>
+            {/* Image Save Modal for In-App Browsers */}
+            {isModalOpen && modalImageUrl && (
+                <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90 p-4" onClick={() => setIsModalOpen(false)}>
+                    <div className="relative w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                        <Button
+                            variant="ghost"
+                            className="absolute -top-12 right-0 text-white hover:bg-white/20 rounded-full p-2"
+                            onClick={() => setIsModalOpen(false)}
+                        >
+                            <X className="w-8 h-8" />
+                        </Button>
+                        <div className="bg-white rounded-2xl overflow-hidden p-2">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={modalImageUrl}
+                                alt="Result Card"
+                                className="w-full h-auto rounded-xl"
+                            />
+                        </div>
+                        <p className="text-white text-center mt-6 text-lg font-bold animate-pulse">
+                            이미지를 꾹 눌러서 저장하세요! 👇
+                        </p>
+                        <p className="text-gray-400 text-center mt-2 text-sm">
+                            카카오톡/인앱 브라우저에서는<br />
+                            직접 저장이 제한될 수 있습니다.
+                        </p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
