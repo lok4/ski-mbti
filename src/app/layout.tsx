@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/react";
 import type { Metadata } from "next";
 import { Noto_Sans_KR } from "next/font/google";
 import "./globals.css";
@@ -44,6 +45,7 @@ export default function RootLayout({
         <MantineProvider>
           <main className="min-h-screen bg-background text-foreground font-sans antialiased">
             {children}
+            <Analytics />
             <SpeedInsights />
           </main>
         </MantineProvider>
