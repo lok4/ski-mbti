@@ -17,14 +17,27 @@ export default function ResultCard({ result }: ResultCardProps) {
     const { reset } = useQuizStore();
     const router = useRouter();
     const [isSharing, setIsSharing] = useState(false);
-    const [canShare, setCanShare] = useState(true); // Default to true to prevent flicker on mobile
+    const [canShare, setCanShare] = useState(false); // Changed default to false
+    const [isMobile, setIsMobile] = useState(false); // Add mobile detection state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalImageUrl, setModalImageUrl] = useState<string | null>(null);
 
     useEffect(() => {
-        // Check if native sharing is supported (Mobile usually true, Desktop usually false)
-        if (typeof navigator !== 'undefined') {
+        // Robust mobile detection
+        const checkMobile = () => {
+            const ua = navigator.userAgent;
+            const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+            return mobileRegex.test(ua);
+        };
+
+        const mobile = checkMobile();
+        setIsMobile(mobile);
+
+        // Can share checks: must be mobile AND support navigator.share
+        if (typeof navigator !== 'undefined' && mobile) {
             setCanShare(!!navigator.share);
+        } else {
+            setCanShare(false); // Desktop always false for "Share" button purposes
         }
     }, []);
 
@@ -93,25 +106,32 @@ export default function ResultCard({ result }: ResultCardProps) {
                 document.body.appendChild(link); // Append to body for Firefox support
                 link.click();
                 document.body.removeChild(link); // Clean up
-                alert("이미지가 다운로드 폴더에 저장되었습니다!");
+                // Removed alert for cleaner UX on desktop
             };
 
-            // Try native sharing
-            if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-                try {
-                    await navigator.share(shareData);
-                } catch (err) {
-                    console.log("Share cancelled or failed", err);
-                    // Only fallback to download if it wasn't a user cancellation (AbortError)
-                    if (err instanceof Error && err.name !== 'AbortError') {
-                        // Fallback to modal for mobile failures
-                        openImageModal();
-                    }
-                }
-            } else {
-                // Desktop or unsupported browser -> Direct Download
+            // Logic Split: Desktop vs Mobile
+            if (!isMobile) {
+                // Desktop: Force Download
                 safeDownload();
+            } else {
+                // Mobile: Try Native Share -> Fallback
+                if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+                    try {
+                        await navigator.share(shareData);
+                    } catch (err) {
+                        console.log("Share cancelled or failed", err);
+                        // Only fallback to download if it wasn't a user cancellation (AbortError)
+                        if (err instanceof Error && err.name !== 'AbortError') {
+                            // Fallback to modal for mobile failures
+                            openImageModal();
+                        }
+                    }
+                } else {
+                    // Supported mobile but no share API? -> Download/Modal
+                    safeDownload();
+                }
             }
+
         } catch (error) {
             console.error("Failed to generate image", error);
             if (error instanceof Error && error.name === 'AbortError') {
