@@ -54,7 +54,15 @@ export default function ResultCard({ result }: ResultCardProps) {
             const blob = await response.blob();
             if (!blob) throw new Error("이미지 데이터가 비어있습니다.");
 
-            const imageUrl = URL.createObjectURL(blob);
+            // Convert to Base64 for better compatibility with in-app browsers (KakaoTalk long-press)
+            const reader = new FileReader();
+            const base64Promise = new Promise<string>((resolve) => {
+                reader.onloadend = () => resolve(reader.result as string);
+            });
+            reader.readAsDataURL(blob);
+            const base64Url = await base64Promise;
+
+            const imageUrl = URL.createObjectURL(blob); // Keep blob URL for desktop download
             const file = new File([blob], "ski-mbti-result.png", { type: "image/png" });
             const shareData = {
                 title: `나의 스키 MBTI는 ${result.title}!`,
@@ -63,7 +71,7 @@ export default function ResultCard({ result }: ResultCardProps) {
             };
 
             const openImageModal = () => {
-                setModalImageUrl(imageUrl);
+                setModalImageUrl(base64Url); // Use Base64 for the modal
                 setIsModalOpen(true);
             };
 
