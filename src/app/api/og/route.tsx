@@ -17,15 +17,27 @@ export async function GET(request: NextRequest) {
     const host = request.headers.get("host") || "localhost:3000";
     const baseUrl = `${protocol}://${host}`;
 
-    // 1. Load Font (Fetch from public URL)
-    const fontUrl = `${baseUrl}/fonts/NotoSansKR-Bold.ttf`;
-    const fontData = await fetch(fontUrl).then((res) => {
-        if (!res.ok) throw new Error(`Failed to load font: ${fontUrl} (${res.status})`);
-        return res.arrayBuffer();
-    }).catch(e => {
-        console.error("Font fetch failed:", e);
-        return null;
-    });
+    // 1. Load Font (Dynamic Subsetting from Google Fonts)
+    const text = `우리 아이 스키 성향은 ${result.title} ${result.description} Ski MBTI by 낭만스키 Img Error`; // All possible text
+
+    // Helper to fetch font
+    async function fetchFont(text: string): Promise<ArrayBuffer | null> {
+        try {
+            const googleFontsUrl = `https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@700&text=${encodeURIComponent(text)}`;
+            const css = await fetch(googleFontsUrl).then((res) => res.text());
+
+            const resource = css.match(/src: url\((.+)\) format\('(opentype|truetype)'\)/);
+            if (!resource) throw new Error("Failed to parse font URL from CSS");
+
+            const fontUrl = resource[1];
+            return await fetch(fontUrl).then((res) => res.arrayBuffer());
+        } catch (e) {
+            console.error("Font fetch failed:", e);
+            return null;
+        }
+    }
+
+    const fontData = await fetchFont(text);
 
     // 2. Load Image (Fetch from public URL)
     const imageUrl = `${baseUrl}${result.imageUrl}`;
@@ -38,6 +50,11 @@ export async function GET(request: NextRequest) {
     });
 
     if (!fontData) {
+        // Fallback or error - strictly speaking we need a font to render text.
+        // If this fails, we might want to return a simple error image or try a system font if supported (but Edge usually needs file).
+        console.error("Critical: Failed to load font data");
+        // We will continue, but text might not render correctly or throw.
+        // For now, let's assume it works or we throw 500.
         return new Response("Failed to load font", { status: 500 });
     }
 
@@ -130,6 +147,9 @@ export async function GET(request: NextRequest) {
                     style: 'normal',
                 },
             ],
+            headers: {
+                "Cache-Control": "public, max-age=31536000, immutable",
+            },
         }
     );
 }
