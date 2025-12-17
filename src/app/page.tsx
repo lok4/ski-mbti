@@ -9,12 +9,10 @@ export default async function Home() {
   let totalCount = BASE_COUNT;
 
   try {
-    const { count, error } = await supabase
-      .from("leads")
-      .select("*", { count: "exact", head: true });
+    const { data, error } = await supabase.rpc("get_leads_count");
 
-    if (!error && count !== null) {
-      totalCount = BASE_COUNT + count;
+    if (!error && typeof data === "number") {
+      totalCount = BASE_COUNT + data;
     }
   } catch (e) {
     console.error("Failed to fetch count", e);
